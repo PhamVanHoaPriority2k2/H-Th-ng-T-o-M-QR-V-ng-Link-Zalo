@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <!-- Thẻ Meta chống Zoom toàn diện trên các hệ điều hành -->
+    <!-- Thẻ Meta chống Zoom toàn diện -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, shrink-to-fit=no, interactive-widget=resizes-content">
     <title>Hệ Thống Tạo Link & Mã QR Zalo Doanh Nghiệp</title>
     
@@ -33,7 +33,7 @@
             font-family: 'Inter', sans-serif;
         }
 
-        /* KHÓA ZOOM MỨC CSS CHO TOÀN BỘ TRANG WEB */
+        /* KHÓA ZOOM MỨC CSS */
         html, body {
             width: 100%;
             height: 100%;
@@ -45,18 +45,10 @@
             align-items: center;
             min-height: 100vh;
             padding: 20px;
-            
-            /* Tắt cử chỉ Zoom của trình duyệt (Chrome, Edge, Firefox, Safari) */
             touch-action: manipulation !important;
             -ms-touch-action: manipulation !important;
-            
-            /* Chặn chọn văn bản vô ý khi nhấn liên tục */
             -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
             user-select: none;
-            
-            /* Tắt hiệu ứng highlight màu xanh khi chạm trên mobile */
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -127,13 +119,12 @@
             font-size: 16px;
         }
 
-        /* Cho phép nhập dữ liệu bình thường trong ô Input */
         .input-wrapper input {
             width: 100%;
             padding: 12px 90px 12px 42px;
             border: 1.5px solid var(--border-color);
             border-radius: 8px;
-            font-size: 16px; /* Để 16px để iOS không tự động zoom vào ô input khi gõ */
+            font-size: 16px;
             outline: none;
             transition: border-color 0.2s ease;
             -webkit-user-select: text;
@@ -353,15 +344,16 @@
         </div>
 
         <div class="form-group">
-            <label for="phone">Số điện thoại Zalo (10 số)</label>
+            <label for="phone">Số điện thoại Zalo (Đúng 10 số)</label>
             <div class="input-wrapper">
                 <i class="fa-solid fa-phone icon-phone"></i>
-                <input type="tel" id="phone" placeholder="Nhập 10 số (ví dụ: 0912345678)" maxlength="11" autocomplete="off">
+                <!-- Đặt maxlength="10" để khóa bàn phím không nhập quá 10 số -->
+                <input type="tel" id="phone" placeholder="Nhập đúng 10 số (ví dụ: 0912345678)" maxlength="10" autocomplete="off">
                 <button class="btn-paste" onclick="pastePhoneNumber()">
                     <i class="fa-regular fa-paste"></i> Dán
                 </button>
             </div>
-            <div class="error-message" id="errorMessage">Vui lòng nhập đầy đủ số điện thoại!</div>
+            <div class="error-message" id="errorMessage">Vui lòng nhập đủ 10 số điện thoại!</div>
         </div>
 
         <button class="btn-generate" onclick="generateZaloData()">
@@ -398,7 +390,17 @@
         const phoneInput = document.getElementById('phone');
         const errorMessage = document.getElementById('errorMessage');
 
+        // BỘ LỌC GIỚI HẠN CHỈ CHO NHẬP ĐÚNG CHỮ SỐ VÀ CẮT TỐI ĐA 10 SỐ REALTIME
         phoneInput.addEventListener('input', function () {
+            // Lọc bỏ toàn bộ chữ cái và ký tự đặc biệt
+            let val = this.value.replace(/\D/g, '');
+            
+            // Cắt đúng tối đa 10 số
+            if (val.length > 10) {
+                val = val.slice(0, 10);
+            }
+            
+            this.value = val;
             phoneInput.classList.remove('error');
             errorMessage.classList.remove('show');
         });
@@ -409,6 +411,7 @@
             }
         });
 
+        // Hàm Dán nhanh SĐT từ khay nhớ tạm (Chỉ lấy tối đa 10 số)
         async function pastePhoneNumber() {
             try {
                 if (!navigator.clipboard) {
@@ -417,7 +420,16 @@
                 }
                 const text = await navigator.clipboard.readText();
                 if (text) {
-                    const cleanText = text.replace(/\D/g, '');
+                    let cleanText = text.replace(/\D/g, '');
+                    
+                    // Nếu dán đầu số +84 dạng 11 số, chuyển về dạng 0 ở đầu
+                    if (cleanText.startsWith('84') && cleanText.length === 11) {
+                        cleanText = '0' + cleanText.slice(2);
+                    }
+                    
+                    // Chỉ lấy đúng 10 số đầu tiên
+                    cleanText = cleanText.slice(0, 10);
+
                     phoneInput.value = cleanText;
                     phoneInput.classList.remove('error');
                     errorMessage.classList.remove('show');
@@ -437,34 +449,30 @@
             const openBtn = document.getElementById('openBtn');
             const canvas = document.getElementById('qrCanvas');
 
-            let cleanPhone = rawPhone.replace(/\D/g, '');
+            const cleanPhone = rawPhone.replace(/\D/g, '');
 
-            if (!rawPhone || cleanPhone.length === 0) {
-                showError('Vui lòng nhập đầy đủ thông tin số điện thoại trước khi tạo!');
+            // 1. Trường hợp chưa nhập gì
+            if (cleanPhone.length === 0) {
+                showError('Vui lòng nhập số điện thoại trước khi tạo!');
                 resultBox.classList.remove('active');
                 return;
             }
 
-            if (cleanPhone.startsWith('84') && cleanPhone.length === 11) {
-                cleanPhone = '0' + cleanPhone.slice(2);
-            }
-
+            // 2. Trường hợp chưa đủ 10 số
             if (cleanPhone.length < 10) {
-                showError(`Số điện thoại bị thiếu số! Bạn mới nhập ${cleanPhone.length}/10 số.`);
-                resultBox.classList.remove('active');
-                return;
-            } else if (cleanPhone.length > 10) {
-                showError(`Số điện thoại bị thừa số! Bạn đã nhập ${cleanPhone.length}/10 số.`);
+                showError(`Bạn mới nhập ${cleanPhone.length}/10 số. Vui lòng nhập đủ 10 số!`);
                 resultBox.classList.remove('active');
                 return;
             }
 
+            // 3. Kiểm tra đầu số hợp lệ (Bắt đầu bằng số 0)
             if (!cleanPhone.startsWith('0')) {
-                showError('Số điện thoại không hợp lệ (phải bắt đầu bằng số 0)!');
+                showError('Số điện thoại phải bắt đầu bằng số 0!');
                 resultBox.classList.remove('active');
                 return;
             }
 
+            // Đạt điều kiện 10 số
             phoneInput.classList.remove('error');
             errorMessage.classList.remove('show');
 
@@ -474,6 +482,7 @@
             urlDisplay.textContent = zaloUrl;
             openBtn.href = zaloUrl;
 
+            // Tạo QR Code
             new QRious({
                 element: canvas,
                 value: zaloUrl,
@@ -481,6 +490,7 @@
                 level: 'H'
             });
 
+            // Vẽ Logo Zalo
             const ctx = canvas.getContext('2d');
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
@@ -553,59 +563,33 @@
             }, 2500);
         }
 
-        /* =========================================================================
-           BỘ BỘ LỌC CHỐNG ZOOM VĨNH VIỄN (PERMANENT ANTI-ZOOM ENGINE)
-           ========================================================================= */
-        
-        // 1. Chặn dùng 2 ngón tay xòe/chụm để phóng to (Pinch-Zoom)
+        /* KHÓA ZOOM MÀN HÌNH */
         document.addEventListener('touchstart', function (event) {
             if (event.touches.length > 1) {
                 event.preventDefault();
             }
         }, { passive: false });
 
-        // 2. Chặn Double-Tap (chạm liên tục 2 lần) để phóng to
         let lastTouchTime = 0;
         document.addEventListener('touchend', function (event) {
             const currentTime = (new Date()).getTime();
             const tapGap = currentTime - lastTouchTime;
-            
             if (tapGap < 300 && tapGap > 0) {
                 event.preventDefault();
             }
             lastTouchTime = currentTime;
         }, { passive: false });
 
-        // 3. Khóa Gesture Event (Đặc trị Safari iOS)
-        document.addEventListener('gesturestart', function (e) {
-            e.preventDefault();
-        }, { passive: false });
+        document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
+        document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
+        document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
 
-        document.addEventListener('gesturechange', function (e) {
-            e.preventDefault();
-        }, { passive: false });
-
-        document.addEventListener('gestureend', function (e) {
-            e.preventDefault();
-        }, { passive: false });
-
-        // 4. Chặn cuộn chuột combined Ctrl trên máy tính (Ctrl + Scroll Wheel Zoom)
         document.addEventListener('wheel', function (event) {
-            if (event.ctrlKey) {
-                event.preventDefault();
-            }
+            if (event.ctrlKey) { event.preventDefault(); }
         }, { passive: false });
 
-        // 5. Chặn phím tắt Ctrl + (+ / - / 0 / =) trên bàn phím máy tính
         document.addEventListener('keydown', function (event) {
-            if (event.ctrlKey && (
-                event.key === '+' || 
-                event.key === '-' || 
-                event.key === '=' || 
-                event.key === '0' ||
-                event.keyCode === 187 || 
-                event.keyCode === 189
-            )) {
+            if (event.ctrlKey && (event.key === '+' || event.key === '-' || event.key === '=' || event.key === '0' || event.keyCode === 187 || event.keyCode === 189)) {
                 event.preventDefault();
             }
         });
