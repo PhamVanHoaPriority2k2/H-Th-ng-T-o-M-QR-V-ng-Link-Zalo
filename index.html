@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Tạo Link & Mã QR Zalo Doanh Nghiệp</title>
+    <!-- Google Fonts & Font Awesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- THAY ĐỔI THƯ VIỆN QR CODE ĐỂ HỖ TRỢ LOGO -->
+    <script src="https://cdn.jsdelivr.net/gh/ushelp/EasyQRCodeJS@v4.4.1/dist/easy.qrcode.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #0068ff;
+            --primary-hover: #0052cc;
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            width: 100%;
+            max-width: 480px;
+            padding: 32px;
+            border-radius: var(--radius);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            border: 1px solid var(--border-color);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .header .logo-icon {
+            width: 54px;
+            height: 54px;
+            background-color: #e6f0ff;
+            color: var(--primary-color);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-main);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 14px;
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 12px 14px 12px 42px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .input-wrapper input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .btn-generate {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-generate:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .result-box {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px dashed var(--border-color);
+            display: none;
+        }
+
+        .result-box.active {
+            display: block;
+        }
+
+        /* Khối Mã QR */
+        .qr-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 16px;
+            background-color: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+
+        #qrcode {
+            padding: 10px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        #qrcode img, #qrcode canvas {
+            display: block;
+            margin: 0 auto;
+        }
+
+        .btn-download-qr {
+            margin-top: 12px;
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-download-qr:hover {
+            text-decoration: underline;
+        }
+
+        .result-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .url-display {
+            background-color: #f8fafc;
+            border: 1px solid var(--border-color);
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--primary-color);
+            word-break: break-all;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn-action {
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-copy {
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+
+        .btn-copy:hover {
+            background-color: #f1f5f9;
+        }
+
+        .btn-open {
+            background-color: #e6f0ff;
+            border: 1px solid transparent;
+            color: var(--primary-color);
+        }
+
+        .btn-open:hover {
+            background-color: #d0e2ff;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--text-main);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div class="logo-icon">
+                <i class="fa-solid fa-qrcode"></i>
+            </div>
+            <h1>Tạo Link & Mã QR Zalo</h1>
+            <p>Giải pháp kết nối nhanh dành cho Doanh Nghiệp</p>
+        </div>
+
+        <div class="form-group">
+            <label for="phone">Số điện thoại Zalo</label>
+            <div class="input-wrapper">
+                <i class="fa-solid fa-phone"></i>
+                <input type="tel" id="phone" placeholder="Nhập số điện thoại (ví dụ: 0912345678)" autocomplete="off">
+            </div>
+        </div>
+
+        <button class="btn-generate" onclick="generateZaloData()">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Tạo Mã QR & Link
+        </button>
+
+        <div class="result-box" id="resultBox">
+            <!-- Mã QR -->
+            <div class="qr-wrapper">
+                <div id="qrcode"></div>
+                <button class="btn-download-qr" onclick="downloadQR()">
+                    <i class="fa-solid fa-download"></i> Tải ảnh mã QR
+                </button>
+            </div>
+
+            <!-- Đường dẫn -->
+            <div class="result-label">Đường dẫn Zalo:</div>
+            <div class="url-display" id="urlDisplay">https://zalo.me/</div>
+            
+            <div class="action-buttons">
+                <button class="btn-action btn-copy" onclick="copyLink()">
+                    <i class="fa-regular fa-copy"></i> Sao chép
+                </button>
+                <a href="#" target="_blank" rel="noopener noreferrer" id="openBtn" class="btn-action btn-open">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Truy cập
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Đã sao chép liên kết!
