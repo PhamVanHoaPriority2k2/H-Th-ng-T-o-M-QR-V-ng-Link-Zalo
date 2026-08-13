@@ -344,11 +344,11 @@
         </div>
 
         <div class="form-group">
-            <label for="phone">Số điện thoại Zalo (Đúng 10 số)</label>
+            <label for="phone">Số điện thoại Zalo (Tối đa 10 số)</label>
             <div class="input-wrapper">
                 <i class="fa-solid fa-phone icon-phone"></i>
-                <!-- Đặt maxlength="10" để khóa bàn phím không nhập quá 10 số -->
-                <input type="tel" id="phone" placeholder="Nhập đúng 10 số (ví dụ: 0912345678)" maxlength="10" autocomplete="off">
+                <!-- Giới hạn cứng maxlength="10" -->
+                <input type="tel" id="phone" placeholder="Nhập 10 số (ví dụ: 0912345678)" maxlength="10" autocomplete="off">
                 <button class="btn-paste" onclick="pastePhoneNumber()">
                     <i class="fa-regular fa-paste"></i> Dán
                 </button>
@@ -390,17 +390,36 @@
         const phoneInput = document.getElementById('phone');
         const errorMessage = document.getElementById('errorMessage');
 
-        // BỘ LỌC GIỚI HẠN CHỈ CHO NHẬP ĐÚNG CHỮ SỐ VÀ CẮT TỐI ĐA 10 SỐ REALTIME
+        // BỘ KHÓA CHẶN KHÔNG CHO NHẬP QUÁ 10 SỐ (REALTIME FILTER)
         phoneInput.addEventListener('input', function () {
-            // Lọc bỏ toàn bộ chữ cái và ký tự đặc biệt
-            let val = this.value.replace(/\D/g, '');
-            
-            // Cắt đúng tối đa 10 số
-            if (val.length > 10) {
-                val = val.slice(0, 10);
+            // Lọc bỏ ký tự không phải số
+            let cleanVal = this.value.replace(/\D/g, '');
+
+            // Nếu nhập quá 10 số -> Cắt đúng 10 số đầu
+            if (cleanVal.length > 10) {
+                cleanVal = cleanVal.slice(0, 10);
             }
-            
-            this.value = val;
+
+            this.value = cleanVal;
+            phoneInput.classList.remove('error');
+            errorMessage.classList.remove('show');
+        });
+
+        // BỘ LỌC KHI DÁN TRỰC TIẾP VÀO Ô INPUT (PASTE EVENT)
+        phoneInput.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+            let cleanText = pastedText.replace(/\D/g, '');
+
+            // Nếu chuỗi dán vào bắt đầu bằng 84 (dạng 11 số), đổi thành dạng 0
+            if (cleanText.startsWith('84') && cleanText.length === 11) {
+                cleanText = '0' + cleanText.slice(2);
+            }
+
+            // Giới hạn tuyệt đối 10 số
+            cleanText = cleanText.slice(0, 10);
+            this.value = cleanText;
+
             phoneInput.classList.remove('error');
             errorMessage.classList.remove('show');
         });
@@ -411,7 +430,7 @@
             }
         });
 
-        // Hàm Dán nhanh SĐT từ khay nhớ tạm (Chỉ lấy tối đa 10 số)
+        // Hàm Nút Dán nhanh từ Khay nhớ tạm
         async function pastePhoneNumber() {
             try {
                 if (!navigator.clipboard) {
@@ -422,12 +441,11 @@
                 if (text) {
                     let cleanText = text.replace(/\D/g, '');
                     
-                    // Nếu dán đầu số +84 dạng 11 số, chuyển về dạng 0 ở đầu
                     if (cleanText.startsWith('84') && cleanText.length === 11) {
                         cleanText = '0' + cleanText.slice(2);
                     }
                     
-                    // Chỉ lấy đúng 10 số đầu tiên
+                    // Cắt giới hạn tối đa 10 số
                     cleanText = cleanText.slice(0, 10);
 
                     phoneInput.value = cleanText;
@@ -451,28 +469,24 @@
 
             const cleanPhone = rawPhone.replace(/\D/g, '');
 
-            // 1. Trường hợp chưa nhập gì
             if (cleanPhone.length === 0) {
-                showError('Vui lòng nhập số điện thoại trước khi tạo!');
+                showError('Vui lòng nhập số điện thoại!');
                 resultBox.classList.remove('active');
                 return;
             }
 
-            // 2. Trường hợp chưa đủ 10 số
             if (cleanPhone.length < 10) {
-                showError(`Bạn mới nhập ${cleanPhone.length}/10 số. Vui lòng nhập đủ 10 số!`);
+                showError(`Mới nhập ${cleanPhone.length}/10 số. Vui lòng nhập đủ 10 số!`);
                 resultBox.classList.remove('active');
                 return;
             }
 
-            // 3. Kiểm tra đầu số hợp lệ (Bắt đầu bằng số 0)
             if (!cleanPhone.startsWith('0')) {
                 showError('Số điện thoại phải bắt đầu bằng số 0!');
                 resultBox.classList.remove('active');
                 return;
             }
 
-            // Đạt điều kiện 10 số
             phoneInput.classList.remove('error');
             errorMessage.classList.remove('show');
 
@@ -482,7 +496,6 @@
             urlDisplay.textContent = zaloUrl;
             openBtn.href = zaloUrl;
 
-            // Tạo QR Code
             new QRious({
                 element: canvas,
                 value: zaloUrl,
@@ -490,7 +503,6 @@
                 level: 'H'
             });
 
-            // Vẽ Logo Zalo
             const ctx = canvas.getContext('2d');
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
