@@ -8,8 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- THAY ĐỔI THƯ VIỆN QR CODE ĐỂ HỖ TRỢ LOGO -->
-    <script src="https://cdn.jsdelivr.net/gh/ushelp/EasyQRCodeJS@v4.4.1/dist/easy.qrcode.min.js"></script>
+    <!-- Thư viện QR Code nhẹ và ổn định tuyệt đối trên GitHub Pages -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 
     <style>
         :root {
@@ -153,7 +153,6 @@
             display: block;
         }
 
-        /* Khối Mã QR */
         .qr-wrapper {
             display: flex;
             flex-direction: column;
@@ -165,16 +164,13 @@
             border-radius: 8px;
         }
 
-        #qrcode {
+        #qrCanvas {
             padding: 10px;
             background: #ffffff;
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-        }
-
-        #qrcode img, #qrcode canvas {
-            display: block;
-            margin: 0 auto;
+            max-width: 100%;
+            height: auto;
         }
 
         .btn-download-qr {
@@ -300,15 +296,13 @@
         </button>
 
         <div class="result-box" id="resultBox">
-            <!-- Mã QR -->
             <div class="qr-wrapper">
-                <div id="qrcode"></div>
+                <canvas id="qrCanvas"></canvas>
                 <button class="btn-download-qr" onclick="downloadQR()">
                     <i class="fa-solid fa-download"></i> Tải ảnh mã QR
                 </button>
             </div>
 
-            <!-- Đường dẫn -->
             <div class="result-label">Đường dẫn Zalo:</div>
             <div class="url-display" id="urlDisplay">https://zalo.me/</div>
             
@@ -323,4 +317,117 @@
         </div>
     </div>
 
-    <div class="toast" id="toast">Đã sao chép liên kết!
+    <div class="toast" id="toast">Đã sao chép liên kết!</div>
+
+    <script>
+        let currentPhone = "";
+
+        document.getElementById('phone').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                generateZaloData();
+            }
+        });
+
+        function generateZaloData() {
+            const phoneInput = document.getElementById('phone').value.trim();
+            const resultBox = document.getElementById('resultBox');
+            const urlDisplay = document.getElementById('urlDisplay');
+            const openBtn = document.getElementById('openBtn');
+            const canvas = document.getElementById('qrCanvas');
+
+            let cleanPhone = phoneInput.replace(/\D/g, '');
+
+            if (!cleanPhone || cleanPhone.length < 9 || cleanPhone.length > 11) {
+                alert('Vui lòng nhập số điện thoại hợp lệ (từ 9 đến 11 số).');
+                return;
+            }
+
+            if (cleanPhone.startsWith('84') && cleanPhone.length > 9) {
+                cleanPhone = '0' + cleanPhone.slice(2);
+            }
+
+            currentPhone = cleanPhone;
+            const zaloUrl = `https://zalo.me/${cleanPhone}`;
+
+            urlDisplay.textContent = zaloUrl;
+            openBtn.href = zaloUrl;
+
+            // Dùng thư viện QRious tạo QR trực tiếp lên canvas
+            const qr = new QRious({
+                element: canvas,
+                value: zaloUrl,
+                size: 260,
+                level: 'H'
+            });
+
+            // Vẽ Logo Zalo trực tiếp ở tâm Canvas mà không cần đợi async
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 28;
+
+            // 1. Viền trắng bao quanh
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius + 4, 0, 2 * Math.PI, false);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+
+            // 2. Hình tròn nền màu xanh Zalo
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+            ctx.fillStyle = '#0068ff';
+            ctx.fill();
+
+            // 3. Chữ Zalo
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 16px Inter, Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Zalo', centerX, centerY + 1);
+
+            resultBox.classList.add('active');
+        }
+
+        function copyLink() {
+            const urlText = document.getElementById('urlDisplay').textContent;
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(urlText).then(() => {
+                    showToast('Đã sao chép liên kết!');
+                });
+            } else {
+                const tempInput = document.createElement('input');
+                tempInput.value = urlText;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                showToast('Đã sao chép liên kết!');
+            }
+        }
+
+        function downloadQR() {
+            const canvas = document.getElementById('qrCanvas');
+            if (canvas) {
+                const imageSrc = canvas.toDataURL("image/png");
+                const link = document.createElement('a');
+                link.href = imageSrc;
+                link.download = `zalo-qr-${currentPhone || 'code'}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                alert("Vui lòng tạo mã QR trước!");
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
